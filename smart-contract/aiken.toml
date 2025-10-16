@@ -1,0 +1,23 @@
+name = "foreon-network/smart-contract"
+version = "0.0.0"
+compiler = "v1.1.19"
+plutus = "v3"
+license = "Apache-2.0"
+description = "Aiken contracts for project 'foreon-network/smart-contract'"
+
+[repository]
+user = "foreon-network"
+project = "smart-contract"
+platform = "github"
+
+[[dependencies]]
+name = "aiken-lang/stdlib"
+version = "v2.2.0"
+source = "github"
+
+[[dependencies]]
+name = "sidan-lab/vodka"
+version = "0.1.16"
+source = "github"
+
+[config]
