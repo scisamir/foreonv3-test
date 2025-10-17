@@ -135,9 +135,9 @@ export function WalletConnectionProvider({ children }: { children: ReactNode }) 
 
   // Refresh wallet state trigger
   const refreshWalletState = () => {
-    setTimeout(() => {
-      setRefreshWallet(prev => !prev);
-    }, 1000);
+    // setTimeout(() => {
+    //   setRefreshWallet(prev => !prev);
+    // }, 1000);
     console.log("wallet refreshed in!");
   };
 
