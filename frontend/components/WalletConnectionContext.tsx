@@ -67,8 +67,9 @@ export function WalletConnectionProvider({ children }: { children: ReactNode }) 
 
     console.log('\n', "bp:", bp, '\n');
 
-    if (connected && wallet) {
+    if (connected && wallet && typeof wallet.getChangeAddress === "function") {
       try {
+        await new Promise(resolve => setTimeout(resolve, 200));
         const walletAddress = await wallet.getChangeAddress();
         const balance = await wallet.getBalance();
         const { pubKeyHash: walletVK, stakeCredentialHash: walletSK } = deserializeAddress(walletAddress);
@@ -116,6 +117,21 @@ export function WalletConnectionProvider({ children }: { children: ReactNode }) 
   useEffect(() => {
     handleWallet();
   }, [connected, wallet, refreshWallet]);
+
+  useEffect(() => {
+    const savedWallet = localStorage.getItem("connectedWallet");
+    if (savedWallet) {
+      connect(savedWallet, true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (connected && name) {
+      localStorage.setItem("connectedWallet", name);
+    } else {
+      localStorage.removeItem("connectedWallet");
+    }
+  }, [connected, name]);
 
   // Refresh wallet state trigger
   const refreshWalletState = () => {
