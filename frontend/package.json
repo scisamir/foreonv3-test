@@ -10,8 +10,7 @@
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
-    "@meshsdk/core": "^1.8.14",
-    "@meshsdk/core-csl": "^1.8.14",
+    "@meshsdk/core": "^1.9.0-beta.81",
     "@meshsdk/react": "^1.9.0-beta.78",
     "@radix-ui/react-accordion": "latest",
     "@radix-ui/react-alert-dialog": "latest",

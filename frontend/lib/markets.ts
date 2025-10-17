@@ -248,13 +248,18 @@ export const fetchMarketData = async (blockchainProvider: BlockchainProviderType
   const getMarketPrices = async (lm: any) => {
     console.log("lm.marketHash:", lm.marketHash);
     const marketUtxo = await getMarketUtxoOptimized(depositUtxos, lm.marketHash);
-    const marketDatum = deserializeDatum<MarketDatumType>(marketUtxo.output.plutusData!);
 
-    const q = Number(marketDatum.fields[6].int);
-    const pYes = Number(marketDatum.fields[9].int);
-    const pNo = Number(marketDatum.fields[10].int);
+    if (marketUtxo) {
+      const marketDatum = deserializeDatum<MarketDatumType>(marketUtxo.output.plutusData!);
 
-    return { q, pYes, pNo };
+      const q = Number(marketDatum.fields[6].int);
+      const pYes = Number(marketDatum.fields[9].int);
+      const pNo = Number(marketDatum.fields[10].int);
+
+      return { q, pYes, pNo };
+    }
+
+    return { q: 0, pYes: 0, pNo: 0 };
   }
 
   const confirmedMarkets = await Promise.all(liquidityMarkets.map(async (lm) => {

@@ -16,13 +16,18 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
-  webpack(config) {
-    config.experiments = {
-      ...config.experiments,
-      asyncWebAssembly: true,
-    };
-    return config;
-  },
+  // webpack(config) {
+  //   // config.experiments = {
+  //   //   ...config.experiments,
+  //   //   asyncWebAssembly: true,
+  //   // };
+  //   config.experiments = { asyncWebAssembly: true, topLevelAwait: true, layers: true, };
+  //   // config.module.rules.push({
+  //   //   test: /\.wasm$/,
+  //   //   type: "asset/resource",
+  //   // });
+  //   return config;
+  // },
 }
 
 export default nextConfig

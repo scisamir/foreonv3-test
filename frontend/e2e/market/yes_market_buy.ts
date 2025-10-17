@@ -17,6 +17,7 @@ export const YesMarketBuy = async (
     MarketHash: string,
     MarketValidatorScript: string,
 ) => {
+  console.log("Inside yes market buy....");
   const { depositScriptTxHash, depositScriptTxIdx, MarketCreatorNft, YesTokenName, PrecisionFactor, UsdmUnit, multiplier, marketToken } = setup();
 
   const marketUtxo = await getMarketUtxo(blockchainProvider, MarketHash);

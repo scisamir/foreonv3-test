@@ -3,17 +3,18 @@ import {
     MaestroProvider,
     MeshTxBuilder,
     MeshWallet,
+    NativeScript,
+    UTxO,
     applyParamsToScript,
     deserializeAddress,
     resolveNativeScriptHash,
     resolveScriptHash,
     serializeNativeScript,
+    stringToHex,
 } from "@meshsdk/core";
-import { NativeScript, stringToHex, UTxO } from "@meshsdk/common";
 import dotenv from "dotenv";
 dotenv.config();
 import blueprint from "../smart-contract/plutus.json" with { type: "json" };
-import { OfflineEvaluator } from "@meshsdk/core-csl";
 
 // Setup blockhain provider as Maestro
 const maestroKey = process.env.MAESTRO_KEY;
@@ -102,8 +103,6 @@ const multiSigUtxos = await blockchainProvider.fetchAddressUTxOs(multiSigAddress
 // console.log("multiSigUtxos:", multiSigUtxos);
 // console.log("multiSigUtxos:", multiSigUtxos[0].output.amount);
 
-// Evaluator for Aiken verbose mode
-const evaluator = new OfflineEvaluator(blockchainProvider, "preprod");
 // Create transaction builder
 const txBuilder = new MeshTxBuilder({
     fetcher: blockchainProvider,
@@ -114,6 +113,7 @@ const txBuilder = new MeshTxBuilder({
     verbose: false,
 });
 txBuilder.setNetwork('preprod');
+// txBuilder.txEvaluationMultiplier = 1.1
 
 // test mint
 // Always success mint validator

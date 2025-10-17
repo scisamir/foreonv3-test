@@ -1,5 +1,4 @@
-import { resolveScriptHash, serializePlutusScript } from "@meshsdk/core";
-import { applyCborEncoding } from "@meshsdk/core-csl";
+import { applyCborEncoding, resolveScriptHash, serializePlutusScript } from "@meshsdk/core";
 import { blockchainProvider, txBuilder, wallet1, wallet1Address, wallet1Collateral, wallet1Utxos } from "../setup.js";
 import { DepositValidatorScript } from "../deposit/validator.js";
 

@@ -89,7 +89,10 @@ export default function AddLiquidityPage({ params }: { params: { id: string } })
     }
 
     setIsProcessing(true);
-    if (!txBuilder || !walletCollateral || !blockchainProvider) return
+    if (!txBuilder || !walletCollateral || !blockchainProvider) {
+      toastFailure("Error: Check collateral")
+      return;
+    }
 
     let txHash = ""
     try {

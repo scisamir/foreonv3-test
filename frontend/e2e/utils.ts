@@ -25,7 +25,6 @@ const getMarketUtxoOptimized = async (depositUtxos: UTxO[], MarketHash: string) 
 
     return utxoDatum.fields[1].bytes === MarketHash;
   });
-  if (!marketUtxo) throw new Error('market utxo not found!');
 
   return marketUtxo;
 };

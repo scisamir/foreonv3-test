@@ -57,13 +57,15 @@ export function WalletConnectionProvider({ children }: { children: ReactNode }) 
     const tb = new MeshTxBuilder({
       fetcher: bp,
       submitter: bp,
-      evaluator: bp,
+      // evaluator: bp,
       verbose: true,
     });
     tb.setNetwork('preprod');
 
     setTxBuilder(tb);
     setBlockchainProvider(bp);
+
+    console.log('\n', "bp:", bp, '\n');
 
     if (connected && wallet) {
       try {
@@ -117,8 +119,10 @@ export function WalletConnectionProvider({ children }: { children: ReactNode }) 
 
   // Refresh wallet state trigger
   const refreshWalletState = () => {
+    setTimeout(() => {
+      setRefreshWallet(prev => !prev);
+    }, 1000);
     console.log("wallet refreshed in!");
-    setRefreshWallet(prev => !prev);
   };
 
   return (

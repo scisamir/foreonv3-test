@@ -1,12 +1,11 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { ArrowLeft, Share, Heart, Plus, Minus, UnfoldHorizontal, Loader2 } from "lucide-react"
+import { Share, Heart, Plus, Minus, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ForeonHeader } from "@/components/foreon-header"
-import Link from "next/link"
 import { fetchMarketData } from "@/lib/markets"
 import { Market } from "@/lib/types"
 import { useRouter } from "next/navigation"
@@ -94,7 +93,12 @@ export default function MarketPage({ params }: { params: { id: string } }) {
 
   const handleYesBuy = async () => {
     setIsProcessing(true);
-    if (!txBuilder || !walletCollateral || !blockchainProvider || !market) return
+    if (!txBuilder || !walletCollateral || !blockchainProvider || !market) {
+      toastFailure("Error: Check collateral")
+      return;
+    }
+
+    console.log("Just in handle yes buy");
 
     let txHash = "";
     try {
@@ -112,13 +116,17 @@ export default function MarketPage({ params }: { params: { id: string } }) {
         market.marketScript,
       );
       txBuilder.reset();
+      console.log("Tried in handle yes buy");
     } catch (e) {
       txBuilder.reset();
       setIsProcessing(false);
       toastFailure(e);
       console.error("e tx:", e);
+      console.log("Err in handle yes buy");
       return;
     }
+
+    console.log("outside catch in handle yes buy");
 
     blockchainProvider.onTxConfirmed(txHash, () => {
       txBuilder.reset();
@@ -132,7 +140,10 @@ export default function MarketPage({ params }: { params: { id: string } }) {
 
   const handleYesSell = async () => {
     setIsProcessing(true);
-    if (!txBuilder || !walletCollateral || !blockchainProvider || !market) return
+    if (!txBuilder || !walletCollateral || !blockchainProvider || !market) {
+      toastFailure("Error: Check collateral")
+      return;
+    }
 
     let txHash = "";
     try {
@@ -170,7 +181,10 @@ export default function MarketPage({ params }: { params: { id: string } }) {
 
   const handleNoBuy = async () => {
     setIsProcessing(true);
-    if (!txBuilder || !walletCollateral || !blockchainProvider || !market) return
+    if (!txBuilder || !walletCollateral || !blockchainProvider || !market) {
+      toastFailure("Error: Check collateral")
+      return;
+    }
 
     let txHash = "";
     try {
@@ -208,7 +222,10 @@ export default function MarketPage({ params }: { params: { id: string } }) {
 
   const handleNoSell = async () => {
     setIsProcessing(true);
-    if (!txBuilder || !walletCollateral || !blockchainProvider || !market) return
+    if (!txBuilder || !walletCollateral || !blockchainProvider || !market) {
+      toastFailure("Error: Check collateral")
+      return;
+    }
 
     let txHash = "";
     try {
@@ -246,6 +263,7 @@ export default function MarketPage({ params }: { params: { id: string } }) {
 
   const handleTrade = async () => {
     if (activeTab === "buy" && shareType === "yes") {
+      console.log("In buy yes tab");
       await handleYesBuy();
     } else if (activeTab === "buy" && shareType === "no") {
       await handleNoBuy();

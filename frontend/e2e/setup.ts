@@ -1,12 +1,14 @@
 import {
+    applyParamsToScript,
     mConStr0,
     mConStr1,
+    NativeScript,
+    resolveNativeScriptHash,
     resolveScriptHash,
     serializeNativeScript,
+    stringToHex,
 } from "@meshsdk/core";
-import { NativeScript, stringToHex } from "@meshsdk/common";
 import blueprint from "../../smart-contract/plutus.json" with { type: "json" };
-import { applyParamsToScript, resolveNativeScriptHash } from "@meshsdk/core-csl";
 
 export const setup = () => {
     const wallet1VK = "96cbb27c96daf8cab890de6d7f87f5ffd025bf8ac80717cbc4fae7da";
@@ -51,7 +53,7 @@ export const setup = () => {
     const UsdmUnit = alwaysSuccessMintValidatorHash + UsdmAssetName;
 
     // Reference scripts
-    const depositScriptTxHash = "90f16042d4d8bff3b0c195ca9ac97147dd740933dad9dc4e813aa3bac8d83df9";
+    const depositScriptTxHash = "ad409c4efdfe5c124a2f341305812bdc6536eb03ff78d4edc240c06786769ff1";
     const depositScriptTxIdx = 0;
 
     const multiplier = 1_000_000;
