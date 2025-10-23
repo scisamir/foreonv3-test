@@ -195,7 +195,7 @@ export default function ActivityPage() {
             <Button variant="ghost" size="sm">
               24
             </Button>
-            <Button variant="primary" size="sm">
+            <Button variant="default" size="sm" className="bg-primary text-primary-foreground">
               Next
             </Button>
           </div>
