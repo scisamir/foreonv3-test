@@ -1,10 +1,10 @@
-import { BuiltinByteString, ConStr0, ConStr1, Integer, MaestroProvider, PubKeyAddress } from "@meshsdk/core";
+import { BuiltinByteString, ConStr0, ConStr1, Integer, List, MaestroProvider, PubKeyAddress, ScriptHash } from "@meshsdk/core";
 
 // Blockchain provider
 export type BlockchainProviderType = MaestroProvider;
 
 // Asset Type
-type AssetType = ConStr0<[
+export type AssetType = ConStr0<[
   ConStr0 | ConStr1,
   BuiltinByteString,
   BuiltinByteString,
@@ -25,6 +25,7 @@ type StartingP = ConStr0<[
 
 type Winner = ConStr1 | ConStr0<[ConStr0 | ConStr1]>;
 
+// Market Datum
 export type MarketDatumType = ConStr0<[
   PubKeyAddress,
   BuiltinByteString,
@@ -38,4 +39,11 @@ export type MarketDatumType = ConStr0<[
   Integer,
   Integer,
   Winner,
+]>;
+
+// Global Settings
+export type GlobalSettingsType = ConStr0<[
+  Integer,
+  List<AssetType>,
+  ScriptHash
 ]>;

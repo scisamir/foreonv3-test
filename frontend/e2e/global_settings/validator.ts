@@ -3,8 +3,10 @@ import { setup } from "../setup";
 
 const { blueprint, multisigHash } = setup();
 
-const gsParamTxHash = "abc2437d60829d0b775d169c6bb0f049e3d7894136efb4ccb09e52e70c987c5d";
-const gsParamTxIdx = 11;
+// const gsParamTxHash = "ed533846d1dfddc7602d8c624eeb80b354650f3820f258431c28861e4e22730a";
+// const gsParamTxIdx = 8;
+const gsParamTxHash = "6a48b3a11cf75ec003cef9904f88f83ae126277774540772241f5b2f571e1862";
+const gsParamTxIdx = 4;
 
 const GlobalSettingsValidator = blueprint.validators.filter(v => 
     v.title.includes("global_settings.global_settings.spend")

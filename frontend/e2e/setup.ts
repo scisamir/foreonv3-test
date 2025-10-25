@@ -11,6 +11,7 @@ import {
 import blueprint from "../../smart-contract/plutus.json" with { type: "json" };
 
 export const setup = () => {
+    // Multisig hashes should be fetched from the DB instead
     const wallet1VK = "96cbb27c96daf8cab890de6d7f87f5ffd025bf8ac80717cbc4fae7da";
     const wallet2VK = "331da30f7c8fea429e2bdc161efde817cbb06f78a53ef5ceee42c9a3";
 
@@ -53,7 +54,7 @@ export const setup = () => {
     const UsdmUnit = alwaysSuccessMintValidatorHash + UsdmAssetName;
 
     // Reference scripts
-    const depositScriptTxHash = "ad409c4efdfe5c124a2f341305812bdc6536eb03ff78d4edc240c06786769ff1";
+    const depositScriptTxHash = "e56b59c58903ba34ca5c4ff6e5222ad2990bfb136aa7cdcb90cf3eddf6ce154c";
     const depositScriptTxIdx = 0;
 
     const multiplier = 1_000_000;

@@ -32,3 +32,29 @@ export interface LiquidtyMarket {
   marketHash: string,
   marketScript: string,
 }
+
+export interface AllowedAsset {
+  isStable: boolean;
+  policyId: string;
+  assetNameHex: string;
+  multiplier: number;
+}
+
+export interface GlobalSetting {
+  id: number | string;
+  minimumMarketAmount: number;
+  adminMultisig: string;
+  allowedAssets: AllowedAsset[];
+}
+
+export interface SettingMarket {
+  id: number;
+  name: string;
+  resolved: boolean;
+  winner?: "YES" | "NO";
+}
+
+export interface CreateSettingsLSItem {
+  globalSetting: GlobalSetting;
+  signedTx1: string;
+}

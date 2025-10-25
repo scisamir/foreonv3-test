@@ -1,6 +1,6 @@
 import { mConStr0, mConStr1 } from "@meshsdk/core";
 import { alwaysSuccessMintValidatorHash, blockchainProvider, GlobalSettingsNft, multiSigAddress, multiSigCbor, multisigHash, multiSigUtxos, txBuilder, UsdmAssetName, wallet1, wallet1Address, wallet1Collateral, wallet1Utxos, wallet2 } from "../setup.js";
-import { GlobalSettingsAddr, GlobalSettingsHash, GlobalSettingsValidatorScript, gsParamTxHash, gsParamTxIdx } from "./validator.js";
+import { GlobalSettingsAddr, GlobalSettingsHash, GlobalSettingsValidatorScript } from "./validator.js";
 
 const AllowedAssets = [
   mConStr0([
@@ -21,15 +21,10 @@ if (!multiSigCbor) {
     throw new Error("multisig cbor doesn't exist");
 }
 
-const gsParamUtxo = (await blockchainProvider.fetchUTxOs(gsParamTxHash, gsParamTxIdx))[0];
+const gsUtxo = (await blockchainProvider.fetchAddressUTxOs(GlobalSettingsAddr))[0];
 
 const unsignedTx = await txBuilder
-    .txIn(
-        gsParamUtxo.input.txHash,
-        gsParamUtxo.input.outputIndex,
-        gsParamUtxo.output.amount,
-        gsParamUtxo.output.address,
-    )
+    // signing utxo
     .txIn(
         multiSigUtxos[0].input.txHash,
         multiSigUtxos[0].input.outputIndex,
@@ -37,10 +32,18 @@ const unsignedTx = await txBuilder
         multiSigUtxos[0].output.address,
     )
     .txInScript(multiSigCbor)
-    .mintPlutusScriptV3()
-    .mint("1", GlobalSettingsHash, GlobalSettingsNft)
-    .mintingScript(GlobalSettingsValidatorScript)
-    .mintRedeemerValue(mConStr0([]))
+    // global settings utxo
+    .spendingPlutusScriptV3()
+    .txIn(
+        gsUtxo.input.txHash,
+        gsUtxo.input.outputIndex,
+        gsUtxo.output.amount,
+        gsUtxo.output.address,
+    )
+    .txInScript(GlobalSettingsValidatorScript)
+    .txInInlineDatumPresent()
+    .txInRedeemerValue(mConStr1([]))
+    // send global settings
     .txOut(GlobalSettingsAddr, [{ unit: GlobalSettingsHash + GlobalSettingsNft, quantity: "1" }])
     .txOutInlineDatumValue(GlobalSettingsDatum)
     // send back multisig value to multisig
@@ -59,4 +62,4 @@ const signedTx1 = await wallet1.signTx(unsignedTx, true);
 const signedTx2 = await wallet2.signTx(signedTx1, true);
 
 const txHash = await wallet1.submitTx(signedTx2);
-console.log("Create global settings tx hash:", txHash);
+console.log("Update global settings tx hash:", txHash);

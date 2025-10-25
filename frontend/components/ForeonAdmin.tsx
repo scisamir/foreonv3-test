@@ -1,0 +1,496 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
+import { motion } from "framer-motion";
+import { useWalletCustom } from "./WalletConnectionContext";
+import { AllowedAsset, CreateSettingsLSItem, GlobalSetting, SettingMarket } from "@/lib/types";
+import { fetchGlobalSettings } from "@/e2e/utils";
+import { toast, ToastContainer } from "react-toastify";
+import { createSettings } from "@/e2e/global_settings/create_settings";
+import { completeSigningCreate } from "@/e2e/global_settings/complete_signing";
+
+export default function ForeonAdmin() {
+  const { blockchainProvider, txBuilder, walletCollateral, wallet, address, walletUtxos } = useWalletCustom();
+
+  const [globalSettings, setGlobalSettings] = useState<GlobalSetting[]>([
+    {
+      id: 1,
+      minimumMarketAmount: 5000,
+      adminMultisig: "ae12bfab908fef23acbd123f000000fabc00123abcdeffedcba0011",
+      allowedAssets: [
+        {
+          isStable: true,
+          policyId: "abcd1234efgh5678ijkl9012mnop3456qrst7890uvwx1122aabb3344",
+          assetNameHex: "555344", // 'USD'
+          multiplier: 1,
+        },
+      ],
+    },
+  ]);
+  
+  const [hGlobalSettings, setHGlobalSettings] = useState<GlobalSetting[]>([]);
+
+  const [isProcessing, setIsProcessing] = useState<boolean>(false)
+
+  const [form, setForm] = useState<GlobalSetting>({
+    id: 0,
+    minimumMarketAmount: 0,
+    adminMultisig: "",
+    allowedAssets: [],
+  });
+
+  const [markets, setMarkets] = useState<SettingMarket[]>([
+    { id: 1, name: "Market 1", resolved: false },
+    { id: 2, name: "Market 2", resolved: false },
+  ]);
+
+  const setNewSetting = async () => {
+    const newSetting = await fetchGlobalSettings(blockchainProvider);
+    if (!newSetting) return;
+    setGlobalSettings([ ...globalSettings, newSetting ]);
+  }
+
+  useEffect(() => {
+    setNewSetting();
+
+    // Get half signed transaction from global settings and display it
+    const lsItemString = localStorage.getItem("Foreon_Create_Settings");
+    if (!lsItemString) return
+    const lsItem: CreateSettingsLSItem = JSON.parse(lsItemString);
+    setHGlobalSettings([lsItem.globalSetting]);
+  }, [])
+
+  // Toast
+  const toastSuccess = (txHash: string) => {
+    toast.success(<div>
+      Success!  
+      <br />
+      <a
+        href={`https://preprod.cardanoscan.io/transaction/${txHash}`} 
+        target="_blank"
+        rel="noopener noreferrer"
+        style={{ color: "#61dafb", textDecoration: "underline" }}
+      >
+        View on Explorer
+      </a>
+    </div>);
+  };
+  const toastFailure = (err: any) => toast.error(`Failed: ${err instanceof Error ? err.message : String(err)}`);
+
+  // handle create new settings
+  const handleCreateSettings = async () => {
+    setIsProcessing(true);
+    if (!txBuilder || !walletCollateral || !blockchainProvider) {
+      toastFailure("Error: Check collateral")
+      return;
+    }
+
+    try {
+      await createSettings(
+        txBuilder,
+        blockchainProvider,
+        wallet,
+        address,
+        walletCollateral,
+        walletUtxos,
+        form.minimumMarketAmount,
+        form.allowedAssets,
+        form,
+      );
+      txBuilder.reset();
+    } catch (e) {
+      txBuilder.reset();
+      setIsProcessing(false);
+      toastFailure(e);
+      console.error("e tx:", e);
+      console.log("Err in handle create settings");
+      return;
+    }
+
+    txBuilder.reset();
+    setIsProcessing(false);
+    toastSuccess("Success! Now complete the signing with the other wallet");
+  }
+
+  // handle complete signing create settings
+  const handleCompleteSigningCreate = async () => {
+    setIsProcessing(true);
+    if (!txBuilder || !walletCollateral || !blockchainProvider) {
+      toastFailure("Error: Check collateral")
+      return;
+    }
+
+    let txHash = "";
+    try {
+      txHash = await completeSigningCreate(wallet);
+      txBuilder.reset();
+    } catch (e) {
+      txBuilder.reset();
+      setIsProcessing(false);
+      toastFailure(e);
+      console.error("e tx:", e);
+      console.log("Err in handle complete signing create settings");
+      return;
+    }
+
+    blockchainProvider.onTxConfirmed(txHash, () => {
+      txBuilder.reset();
+      setIsProcessing(false);
+      toastSuccess(txHash);
+      console.log("Create global settings tx hash:", txHash);
+    });
+  }
+
+  const resetForm = () => {
+    setForm({ id: 0, minimumMarketAmount: 0, adminMultisig: "", allowedAssets: [] });
+  };
+
+  const addAsset = () => {
+    setForm({
+      ...form,
+      allowedAssets: [
+        ...form.allowedAssets,
+        { isStable: false, policyId: "", assetNameHex: "", multiplier: 1 },
+      ],
+    });
+  };
+
+  const updateAsset = <K extends keyof AllowedAsset>(
+    index: number,
+    key: K,
+    value: AllowedAsset[K]
+  ) => {
+    setForm((prev) => {
+      const updatedAssets = prev.allowedAssets.map((asset, i) =>
+        i === index ? { ...asset, [key]: value } : asset
+      );
+      return { ...prev, allowedAssets: updatedAssets };
+    });
+  };
+
+  const deleteAsset = (index: number) => {
+    setForm({
+      ...form,
+      allowedAssets: form.allowedAssets.filter((_, i) => i !== index),
+    });
+  };
+
+  const handleSave = async () => {
+    if (form.id) {
+      // Update existing
+      setGlobalSettings(
+        globalSettings.map((s) => (s.id === form.id ? { ...form } : s))
+      );
+      alert("Global settings updated (mock)");
+    } else {
+      // Create new
+      const newSetting = { ...form, id: Date.now() };
+      setGlobalSettings([...globalSettings, newSetting]);
+      await handleCreateSettings();
+      // alert("Global settings created (mock)");
+    }
+    resetForm();
+  };
+
+  const handleEdit = (setting: GlobalSetting) => {
+    setForm(setting);
+  };
+
+  const handleDelete = (id: number | string) => {
+    if (confirm("Delete this global setting?")) {
+      setGlobalSettings(globalSettings.filter((s) => s.id !== id));
+      if (form.id === id) resetForm();
+      alert("Global setting deleted (mock)");
+    }
+  };
+
+  const markWinner = (marketId: number, winner: "YES" | "NO") => {
+    if (confirm(`Set winner of Market ${marketId} to ${winner}?`)) {
+      setMarkets(
+        markets.map((m) =>
+          m.id === marketId ? { ...m, resolved: true, winner } : m
+        )
+      );
+      alert(`Market ${marketId} resolved as ${winner}`);
+    }
+  };
+
+  return (
+    <motion.div className="min-h-screen bg-gray-100 p-6 flex flex-col gap-8 items-center">
+      {/* Toast */}
+      <ToastContainer position='top-right' autoClose={5000} />
+
+      <Card className="w-full max-w-5xl shadow-lg">
+        <CardHeader>
+          <CardTitle>Global Settings Manager</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm border rounded-lg bg-white">
+              <thead className="bg-gray-200 text-left">
+                <tr>
+                  <th className="p-2">ID</th>
+                  <th className="p-2">Min Market</th>
+                  <th className="p-2">Admin Hash</th>
+                  <th className="p-2">Allowed Assets</th>
+                  <th className="p-2">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {globalSettings.map((s) => (
+                  <tr key={s.id} className="border-t align-top">
+                    <td className="p-2">{s.id}</td>
+                    <td className="p-2">{s.minimumMarketAmount}</td>
+                    <td className="p-2 truncate max-w-xs">{s.adminMultisig}</td>
+
+                    {/* 🧩 Allowed Assets shown in detail */}
+                    <td className="p-2">
+                      <div className="flex flex-col gap-2">
+                        {s.allowedAssets.length === 0 && (
+                          <span className="text-gray-400 italic">No assets</span>
+                        )}
+                        {s.allowedAssets.map((asset, i) => (
+                          <div
+                            key={i}
+                            className="border rounded-md p-2 bg-gray-50 flex flex-col gap-1 text-xs"
+                          >
+                            <div className="flex justify-between">
+                              <span className="font-semibold">
+                                {asset.isStable ? "✅ Stable" : "⚡ Non-Stable"}
+                              </span>
+                              <span>x{asset.multiplier}</span>
+                            </div>
+                            <div className="truncate text-gray-700">
+                              <strong>Policy:</strong> {asset.policyId}
+                            </div>
+                            <div className="truncate text-gray-700">
+                              <strong>Asset Name (Hex):</strong> {asset.assetNameHex}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </td>
+
+                    <td className="p-2 flex flex-col gap-2">
+                      <Button size="sm" onClick={() => handleEdit(s)}>
+                        Edit
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => handleDelete(s.id)}
+                      >
+                        Delete
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Half signed Settings */}
+          <div className="overflow-x-auto p-4 border rounded-md bg-white space-y-4">
+            <h3 className="text-lg font-semibold">
+                Half Signed Settings
+            </h3>
+            <table className="w-full text-sm border rounded-lg bg-white">
+              <thead className="bg-gray-200 text-left">
+                <tr>
+                  <th className="p-2">ID</th>
+                  <th className="p-2">Min Market</th>
+                  <th className="p-2">Admin Hash</th>
+                  <th className="p-2">Allowed Assets</th>
+                  <th className="p-2">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {hGlobalSettings && hGlobalSettings.map((s) => (
+                  <tr key={s.id} className="border-t align-top">
+                    <td className="p-2">{s.id}</td>
+                    <td className="p-2">{s.minimumMarketAmount}</td>
+                    <td className="p-2 truncate max-w-xs">{s.adminMultisig}</td>
+
+                    {/* 🧩 Allowed Assets shown in detail */}
+                    <td className="p-2">
+                      <div className="flex flex-col gap-2">
+                        {s.allowedAssets.length === 0 && (
+                          <span className="text-gray-400 italic">No assets</span>
+                        )}
+                        {s.allowedAssets.map((asset, i) => (
+                          <div
+                            key={i}
+                            className="border rounded-md p-2 bg-gray-50 flex flex-col gap-1 text-xs"
+                          >
+                            <div className="flex justify-between">
+                              <span className="font-semibold">
+                                {asset.isStable ? "✅ Stable" : "⚡ Non-Stable"}
+                              </span>
+                              <span>x{asset.multiplier}</span>
+                            </div>
+                            <div className="truncate text-gray-700">
+                              <strong>Policy:</strong> {asset.policyId}
+                            </div>
+                            <div className="truncate text-gray-700">
+                              <strong>Asset Name (Hex):</strong> {asset.assetNameHex}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </td>
+
+                    <td className="p-2 flex flex-col gap-2">
+                      <Button size="sm" onClick={handleCompleteSigningCreate} disabled={isProcessing}>
+                        {isProcessing ? "Processing..." : "Complete Sigining"}
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Create/Edit Global Settings */}
+          <div className="p-4 border rounded-md bg-white space-y-4">
+            <div className="flex justify-between items-center">
+              <h3 className="text-lg font-semibold">
+                {form.id ? "Edit Global Setting" : "Create New Global Setting"}
+              </h3>
+              {form.id && (
+                <Button variant="outline" size="sm" onClick={resetForm}>
+                  + New
+                </Button>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-sm">Minimum Market Amount</label>
+              <Input
+                type="number"
+                value={form.minimumMarketAmount === 0 ? "" : form.minimumMarketAmount}
+                onChange={(e) =>
+                  setForm({ ...form, minimumMarketAmount: Number(e.target.value) })
+                }
+                required
+              />
+            </div>
+
+            {/* <div>
+              <label className="block text-sm">Admin Multisig Hash</label>
+              <Input
+                type="text"
+                value={form.adminMultisig}
+                onChange={(e) => setForm({ ...form, adminMultisig: e.target.value })}
+              />
+            </div> */}
+
+            <div className="space-y-2">
+              <div className="flex justify-between items-center">
+                <label className="text-sm font-medium">Allowed Assets</label>
+                <Button variant="outline" size="sm" onClick={addAsset}>
+                  + Add Asset
+                </Button>
+              </div>
+
+              {form.allowedAssets.map((asset, index) => (
+                <div
+                  key={index}
+                  className="border p-3 rounded-md bg-gray-50 space-y-2"
+                >
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      checked={asset.isStable}
+                      onCheckedChange={(val) =>
+                        updateAsset(index, "isStable", val === true)
+                      }
+                    />
+                    <span className="text-sm">Stable Asset</span>
+                  </div>
+
+                  <Input
+                    placeholder="Policy ID"
+                    value={asset.policyId}
+                    onChange={(e) =>
+                      updateAsset(index, "policyId", e.target.value)
+                    }
+                  />
+                  <Input
+                    placeholder="Asset Name (Hex)"
+                    value={asset.assetNameHex}
+                    onChange={(e) =>
+                      updateAsset(index, "assetNameHex", e.target.value)
+                    }
+                  />
+                  <Input
+                    placeholder="Multiplier"
+                    type="number"
+                    value={asset.multiplier}
+                    onChange={(e) =>
+                      updateAsset(index, "multiplier", Number(e.target.value))
+                    }
+                  />
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => deleteAsset(index)}
+                  >
+                    Delete Asset
+                  </Button>
+                </div>
+              ))}
+            </div>
+
+            <Button onClick={handleSave} disabled={isProcessing || !form.minimumMarketAmount || !form.allowedAssets[0]?.assetNameHex || !form.allowedAssets[0]?.policyId || !form.allowedAssets[0]?.multiplier}>
+              {isProcessing ? "Processing..." :
+                form.id ? "Update Global Setting" : "Create Global Setting"
+              }
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className="w-full max-w-5xl shadow-lg">
+        <CardHeader>
+          <CardTitle>Markets</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {markets.map((m) => (
+            <div
+              key={m.id}
+              className="p-3 bg-white rounded-lg shadow flex justify-between items-center"
+            >
+              <div>
+                <div className="font-medium">{m.name}</div>
+                {m.resolved ? (
+                  <span className="text-sm text-green-700">
+                    Winner: {m.winner}
+                  </span>
+                ) : (
+                  <span className="text-sm text-gray-500">Unresolved</span>
+                )}
+              </div>
+              {!m.resolved && (
+                <div className="flex gap-2">
+                  <Button size="sm" onClick={() => markWinner(m.id, "YES")}>
+                    Yes
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => markWinner(m.id, "NO")}
+                  >
+                    No
+                  </Button>
+                </div>
+              )}
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+    </motion.div>
+  );
+}
