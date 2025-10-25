@@ -1,12 +1,11 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { ForeonHeader } from "@/components/foreon-header"
 import { CategoryFilter } from "@/components/category-filter"
 import { FilterSidebar } from "@/components/filter-sidebar"
 import { HeroCards } from "@/components/hero-cards"
 import { MarketGrid } from "@/components/market-grid"
-import { Pagination } from "@/components/pagination"
 
 export default function Home() {
   const [isFilterOpen, setIsFilterOpen] = useState(false)
@@ -22,14 +21,15 @@ export default function Home() {
 
           {/* Main Content */}
           <div className="flex-1">
-            <CategoryFilter onFilterClick={() => setIsFilterOpen(!isFilterOpen)} />
+            {/* Sticky Category Filter */}
+            <div className="sticky top-16 z-40 bg-background pb-2">
+              <CategoryFilter onFilterClick={() => setIsFilterOpen(!isFilterOpen)} />
+            </div>
 
             <HeroCards />
-            <MarketGrid />
 
-            <div className="mt-8">
-              <Pagination />
-            </div>
+            {/* Market grid now handles its own lazy loading / load more */}
+            <MarketGrid />
           </div>
         </div>
       </main>

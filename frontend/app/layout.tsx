@@ -5,12 +5,10 @@ import type { Metadata } from "next"
 import { DM_Sans } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 import { ThemeProvider } from "@/components/theme-provider"
-import { Suspense } from "react"
 import "./globals.css"
 import { ClientProviders } from "@/components/ClientProviders"
-import { usePathname } from "next/navigation";
-import { useWalletCustom } from "@/components/WalletConnectionContext";
-import { WalletCheck } from "@/components/WalletCheck";
+import { WalletCheck } from "@/components/WalletCheck"
+import Footer from "@/components/Footer" // 👈 Import here
 
 const dmSans = DM_Sans({
   subsets: ["latin"],
@@ -32,13 +30,14 @@ export default function RootLayout({
         />
       </head>
       <body className={`font-sans ${dmSans.variable}`}>
-        {/* <Suspense fallback={<div className="p-6 text-muted-foreground">Loading...</div>}> */}
         <ClientProviders>
           <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
-            <WalletCheck>{children}</WalletCheck>
+            <WalletCheck>
+              {children}
+              <Footer /> {/* 👈 Add Footer below all page content */}
+            </WalletCheck>
           </ThemeProvider>
         </ClientProviders>
-        {/* </Suspense> */}
         <Analytics />
       </body>
     </html>

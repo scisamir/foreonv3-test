@@ -5,7 +5,6 @@ import { ForeonHeader } from "@/components/foreon-header"
 import { CategoryFilter } from "@/components/category-filter"
 import { ProposedMarketGrid } from "@/components/proposed-market-grid"
 import { ProposedMarketFilter } from "@/components/proposed-market-filter"
-import { Pagination } from "@/components/pagination"
 
 export default function ProposedMarketPage() {
   const [isFilterOpen, setIsFilterOpen] = useState(false)
@@ -21,13 +20,16 @@ export default function ProposedMarketPage() {
 
           {/* Main Content */}
           <div className="flex-1">
-            <CategoryFilter onFilterClick={() => setIsFilterOpen(!isFilterOpen)} showProposedMarket={false} />
-
-            <ProposedMarketGrid />
-
-            <div className="mt-8">
-              <Pagination />
+            {/* Sticky Category Filter */}
+            <div className="sticky top-16 z-40 bg-background pb-2">
+              <CategoryFilter
+                onFilterClick={() => setIsFilterOpen(!isFilterOpen)}
+                showProposedMarket={false}
+              />
             </div>
+
+            {/* Proposed market grid handles infinite scroll / load more */}
+            <ProposedMarketGrid />
           </div>
         </div>
       </main>

@@ -34,11 +34,14 @@ export function ForeonHeader() {
   return (
     <>
       <header
-        className="w-full"
-        style={{
-          backgroundColor: theme === "dark" ? "transparent" : "#F6EEFF",
-        }}
-      >
+       className={`sticky top-0 z-50 w-full backdrop-blur-md transition-shadow ${
+       typeof window !== "undefined" && window.scrollY > 10 ? "shadow-md" : ""
+       }`}
+       style={{
+         backgroundColor: theme === "dark" ? "rgba(0, 0, 0, 0.7)" : "rgba(246, 238, 255, 0.85)",
+   }}  
+   >
+
         <div className="flex flex-col text-[#22005D]">
           {/* Main header row */}
           <div className="container mx-auto flex items-center justify-between px-8 py-4">

@@ -9,6 +9,7 @@ import { Search, Filter, Clock, ExternalLink } from "lucide-react"
 import { ClaimRewardModal } from "@/components/claim-reward-modal"
 import { CancelOrderModal } from "@/components/cancel-order-modal"
 import { ForeonHeader } from "@/components/foreon-header"
+import { Pagination } from "@/components/pagination"
 
 // Mock data - replace with real data from your API
 const mockPositions = [
@@ -106,37 +107,42 @@ export default function PortfolioPage() {
     <div className="min-h-screen bg-background">
       <ForeonHeader />
       <div className="container mx-auto px-4 py-8">
-        {/* Header Section */}
-        <div className="mb-8">
-          <Card className="bg-gradient-to-r from-purple-900 to-purple-700 text-white p-8">
-            <div className="flex items-center gap-2 mb-2">
-              <span className="text-sm opacity-90">Total Volume</span>
-              <div className="w-4 h-4 rounded-full border border-white/30 flex items-center justify-center">
-                <span className="text-xs">?</span>
-              </div>
-            </div>
-            <h1 className="text-4xl font-bold">150,361,056 USDM</h1>
-          </Card>
+        {/* ===== Header Section ===== */}
+<div className="flex flex-col md:flex-row gap-6 mb-12 mt-20">
+  {/* Total Volume Box */}
+  <Card
+    className="flex-1 text-white flex flex-col justify-center px-8 py-10 rounded-xl"
+    style={{ backgroundColor: "#22005D" }}
+  >
+    <div className="flex items-center gap-2 mb-3">
+      <span className="text-sm opacity-90">Total Volume</span>
+      <div className="w-4 h-4 rounded-full border border-white/30 flex items-center justify-center">
+        <span className="text-xs">?</span>
+      </div>
+    </div>
+    <h1 className="text-4xl font-bold">150,361,056 USDM</h1>
+  </Card>
 
-          <div className="mt-6 bg-muted/30 rounded-lg p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground mb-1">Wallet Address</p>
-                <div className="flex items-center gap-2">
-                  <span className="font-mono text-lg">addr2...8876</span>
-                  <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-                    <ExternalLink className="w-3 h-3" />
-                  </Button>
-                </div>
-              </div>
-              <div className="text-right">
-                <p className="text-sm text-muted-foreground">
-                  Ensure to keep your wallet address safe at all times to protect your assets
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
+  {/* Wallet Address Box */}
+  <Card
+    className="flex-1 flex flex-col justify-center text-foreground px-8 py-10 rounded-xl"
+    style={{ backgroundColor: "#F6EEFF" }}
+  >
+    <div className="flex flex-col gap-3">
+      <p className="text-sm text-muted-foreground mb-1">Wallet Address</p>
+      <div className="flex items-center gap-2">
+        <span className="font-mono text-lg">addr2...8876</span>
+        <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+          <ExternalLink className="w-3 h-3" />
+        </Button>
+      </div>
+      <p className="text-sm text-muted-foreground">
+        Ensure to keep your wallet address safe at all times to protect your assets
+      </p>
+    </div>
+  </Card>
+</div>
+
 
         {/* Tabs Section */}
         <Tabs defaultValue="position" className="w-full">
@@ -262,6 +268,7 @@ export default function PortfolioPage() {
                 </div>
               ))}
             </div>
+            <Pagination/>
           </TabsContent>
 
           {/* Orders Tab */}
@@ -326,6 +333,7 @@ export default function PortfolioPage() {
                 </div>
               ))}
             </div>
+            <Pagination />
           </TabsContent>
 
           {/* History Tab */}
@@ -373,6 +381,7 @@ export default function PortfolioPage() {
                 </div>
               ))}
             </div>
+            <Pagination />
           </TabsContent>
         </Tabs>
 
