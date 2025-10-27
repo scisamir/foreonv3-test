@@ -128,6 +128,8 @@ const marketData: Market[] = [
     volume: "569,236,056 USDM",
     marketHash: "",
     marketScript: "",
+    endTime: "1761559928",
+    resolved: false,
   },
   {
     id: "2",
@@ -141,6 +143,8 @@ const marketData: Market[] = [
     volume: "569,236,056 USDM",
     marketHash: "",
     marketScript: "",
+    endTime: "1761559928",
+    resolved: false,
   },
   {
     id: "3",
@@ -154,6 +158,8 @@ const marketData: Market[] = [
     volume: "569,236,056 USDM",
     marketHash: "",
     marketScript: "",
+    endTime: "1761559928",
+    resolved: true,
   },
   {
     id: "4",
@@ -167,6 +173,8 @@ const marketData: Market[] = [
     volume: "569,236,056 USDM",
     marketHash: "",
     marketScript: "",
+    endTime: "1761559928",
+    resolved: true,
   },
   {
     id: "5",
@@ -180,6 +188,8 @@ const marketData: Market[] = [
     volume: "569,236,056 USDM",
     marketHash: "",
     marketScript: "",
+    endTime: "1761559928",
+    resolved: false,
   },
   {
     id: "6",
@@ -193,6 +203,8 @@ const marketData: Market[] = [
     volume: "569,236,056 USDM",
     marketHash: "",
     marketScript: "",
+    endTime: "1761559928",
+    resolved: true,
   },
   {
     id: "7",
@@ -206,6 +218,8 @@ const marketData: Market[] = [
     volume: "569,236,056 USDM",
     marketHash: "",
     marketScript: "",
+    endTime: "1761559928",
+    resolved: true,
   },
   {
     id: "8",
@@ -219,6 +233,8 @@ const marketData: Market[] = [
     volume: "569,236,056 USDM",
     marketHash: "",
     marketScript: "",
+    endTime: "1761559928",
+    resolved: true,
   },
 ]
 
@@ -262,7 +278,10 @@ export const fetchMarketData = async (blockchainProvider: BlockchainProviderType
     return { q: 0, pYes: 0, pNo: 0 };
   }
 
-  const confirmedMarkets = await Promise.all(liquidityMarkets.map(async (lm) => {
+  const lsMarkets = localStorage.getItem("Foreon_Markets") ?? "[]"
+  const foreonMarkets: Market[] = JSON.parse(lsMarkets)
+
+  const confirmedMarketsRaw = await Promise.all(liquidityMarkets.map(async (lm) => {
     const proposal = proposals.find((p) => p.email === lm.email)
 
     let prices = { q: 0, pYes: 0, pNo: 0 };
@@ -275,6 +294,14 @@ export const fetchMarketData = async (blockchainProvider: BlockchainProviderType
 
     const { q, pYes, pNo } = prices;
 
+    // If market is in localstorage and it's resolved, skip updating the data
+    const isMarketInLs = foreonMarkets.find(fm => (fm.id === lm.id && fm.resolved === true))
+    if (isMarketInLs) return
+
+    // Note: market data is saved on the DB
+    // New market `resolved` value is 'false' by default
+    // Every query to get all markets would run this function again but without updating `resolved` value for existing markets on the DB
+    // Only admin can update resolved values (when updating market winners)
     return {
       id: lm.id,
       title: proposal?.marketTitle || "Unknown",
@@ -287,7 +314,15 @@ export const fetchMarketData = async (blockchainProvider: BlockchainProviderType
       volume: `${q.toLocaleString()} USDM`,
       marketHash: lm.marketHash,
       marketScript: lm.marketScript,
+      endTime: proposal?.endTime ?? "0",
+      resolved: false,
   }}));
 
-  return [...confirmedMarkets.reverse(), ...marketData]
+  const confirmedMarkets = confirmedMarketsRaw.filter(
+    (m): m is Market => m !== undefined
+  );
+  const existingMarkets: Market[] = [...confirmedMarkets.reverse(), ...marketData]
+  const filteredFM = foreonMarkets.filter(fm => fm.resolved === true)
+
+  return [...existingMarkets, ...filteredFM];
 }

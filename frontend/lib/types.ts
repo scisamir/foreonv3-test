@@ -21,6 +21,8 @@ export interface Market {
   volume: string
   marketHash: string,
   marketScript: string,
+  endTime: string,
+  resolved: boolean,
 }
 
 export interface LiquidtyMarket {
@@ -59,5 +61,10 @@ export interface SettingsLSItem {
   signedTx1: string;
 }
 
+export interface MarketUWLSItem {
+  market: Market;
+  signedTx1: string;
+}
+
 export type lsItemKeyType =
-  "Foreon_Create_Settings" | "Foreon_Update_Settings"
+  "Foreon_Create_Settings" | "Foreon_Update_Settings" | "Foreon_Update_Market"

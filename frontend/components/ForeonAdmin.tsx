@@ -7,13 +7,14 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { motion } from "framer-motion";
 import { useWalletCustom } from "./WalletConnectionContext";
-import { AllowedAsset, SettingsLSItem, GlobalSetting, SettingMarket, lsItemKeyType, Market } from "@/lib/types";
+import { AllowedAsset, SettingsLSItem, GlobalSetting, SettingMarket, lsItemKeyType, Market, MarketUWLSItem } from "@/lib/types";
 import { fetchGlobalSettings } from "@/e2e/utils";
 import { toast, ToastContainer } from "react-toastify";
 import { createSettings } from "@/e2e/global_settings/create_settings";
 import { updateSettings } from "@/e2e/global_settings/update_settings";
 import { completeSigning } from "@/e2e/global_settings/complete_signing";
 import { fetchMarketData } from "@/lib/markets";
+import { updateWinner } from "@/e2e/global_settings/update_winner";
 
 export default function ForeonAdmin() {
   const { blockchainProvider, txBuilder, walletCollateral, wallet, address, walletUtxos, connected } = useWalletCustom();
@@ -36,7 +37,10 @@ export default function ForeonAdmin() {
 
   const [hGlobalSettings, setHGlobalSettings] = useState<GlobalSetting[]>([]);
 
+  const [hMarkets, setHMarkets] = useState<Market[]>([]);
+
   const [isProcessing, setIsProcessing] = useState<boolean>(false)
+  const [isProcessingM, setIsProcessingM] = useState<boolean>(false)
 
   const [form, setForm] = useState<GlobalSetting>({
     id: 0,
@@ -65,23 +69,35 @@ export default function ForeonAdmin() {
 
     if (!lsItemStringCreate && !lsItemStringUpdate) return
 
-    const lsItem: SettingsLSItem = JSON.parse(lsItemStringCreate ? lsItemStringCreate : lsItemStringUpdate ? lsItemStringUpdate : "");
+    const lsItem: SettingsLSItem = JSON.parse(lsItemStringCreate ? lsItemStringCreate : lsItemStringUpdate ? lsItemStringUpdate : "[]");
 
     setHGlobalSettings([lsItem.globalSetting]);
   }, [isProcessing])
+
+  useEffect(() => {
+    // Get half signed transaction from local storage and display it
+    const lsItemStringWinner = localStorage.getItem("Foreon_Update_Market");
+    if (!lsItemStringWinner) return
+
+    const lsItems: MarketUWLSItem[] = JSON.parse(lsItemStringWinner);
+
+    const marketsLS = lsItems.map(ls => ls.market)
+    setHMarkets(marketsLS);
+  }, [isProcessingM])
 
   useEffect(() => {
       const fetchMarket = async () => {
         try {
           if (!blockchainProvider) throw new Error('blockchainProvider not found');
           const marketResult = await fetchMarketData(blockchainProvider)
-          const marketData = marketResult.filter((m) => m.title !== "Unknown")
+          // Filter out invalid markets and markets whose deadlines have not reached
+          const marketData = marketResult.filter((m) => (m.title !== "Unknown" && m.endTime !== "0" && Number(m.endTime) <= new Date().getTime()))
           setMarkets(marketData)
         } catch(e) {
           console.error('e:', e);
         }
       }
-  
+
       fetchMarket();
     }, [connected])
 
@@ -171,6 +187,41 @@ export default function ForeonAdmin() {
     setIsProcessing(false);
     toastSuccess("Success! Now complete the signing with the other wallet");
   }
+  
+  // handle update winner
+  const handleUpdateWinner = async (winnerType: "Yes" | "No", market: Market) => {
+    setIsProcessing(true);
+    if (!txBuilder || !walletCollateral || !blockchainProvider) {
+      toastFailure("Error: Check collateral")
+      return;
+    }
+
+    try {
+      await updateWinner(
+        txBuilder,
+        blockchainProvider,
+        wallet,
+        address,
+        walletCollateral,
+        walletUtxos,
+        winnerType,
+        market.marketHash,
+        market,
+      );
+      txBuilder.reset();
+    } catch (e) {
+      txBuilder.reset();
+      setIsProcessing(false);
+      toastFailure(e);
+      console.error("e tx:", e);
+      console.log("Err in handle update winner");
+      return;
+    }
+
+    txBuilder.reset();
+    setIsProcessing(false);
+    toastSuccess("Success! Now complete the signing with the other wallet");
+  }
 
   // handle complete signing settings
   const handleCompleteSigning = async () => {
@@ -205,6 +256,35 @@ export default function ForeonAdmin() {
       setIsProcessing(false);
       toastSuccess(txHash);
       console.log("Create global settings tx hash:", txHash);
+    });
+  }
+
+  // handle complete signing winner
+  const handleCompleteSigningWinner = async (market: Market) => {
+    setIsProcessing(true);
+    if (!txBuilder || !walletCollateral || !blockchainProvider) {
+      toastFailure("Error: Check collateral")
+      return;
+    }
+
+    let txHash = "";
+    try {
+      txHash = await completeSigning(wallet, "Foreon_Update_Market", market);
+      txBuilder.reset();
+    } catch (e) {
+      txBuilder.reset();
+      setIsProcessing(false);
+      toastFailure(e);
+      console.error("e tx:", e);
+      console.log("Err in handle complete signing update market");
+      return;
+    }
+
+    blockchainProvider.onTxConfirmed(txHash, () => {
+      txBuilder.reset();
+      setIsProcessing(false);
+      toastSuccess(txHash);
+      console.log("Update market winner tx hash:", txHash);
     });
   }
 
@@ -270,16 +350,16 @@ export default function ForeonAdmin() {
     }
   };
 
-  const markWinner = (marketId: string, winner: "YES" | "NO") => {
-    if (confirm(`Set winner of Market ${marketId} to ${winner}?`)) {
-      setMarkets(
-        markets.map((m) =>
-          m.id === marketId ? { ...m, resolved: true, winner } : m
-        )
-      );
-      alert(`Market ${marketId} resolved as ${winner}`);
-    }
-  };
+  // const markWinner = (marketId: string, winner: "YES" | "NO") => {
+  //   if (confirm(`Set winner of Market ${marketId} to ${winner}?`)) {
+  //     setMarkets(
+  //       markets.map((m) =>
+  //         m.id === marketId ? { ...m, resolved: true, winner } : m
+  //       )
+  //     );
+  //     alert(`Market ${marketId} resolved as ${winner}`);
+  //   }
+  // };
 
   return (
     <motion.div className="min-h-screen bg-gray-100 p-6 flex flex-col gap-8 items-center">
@@ -517,46 +597,83 @@ export default function ForeonAdmin() {
         </CardContent>
       </Card>
 
+      {/* Half signed markets updates */}
+      <Card className="w-full max-w-5xl shadow-lg">
+        <CardHeader>
+          <CardTitle>Half signed Markets Updates</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {hMarkets.map((m) => {
+            const isYes = Number(m.options[0].percentage.slice(0, 2)) > 50;
+
+            return (
+              <div
+                key={m.id}
+                className="p-3 bg-white rounded-lg shadow flex justify-between items-center"
+              >
+                <div>
+                  <div className="font-medium">{m.title} <s />
+                    <span className={`${isYes ? "text-blue-800" : "text-red-600"} font-bold`}>(Yes {m.options[0].type === "yes" ? m.options[0].percentage: "invalid market"})</span>
+                  </div>
+                  <span className="text-sm text-green-700">
+                    Winner: {isYes ? "Yes" : "No"}
+                  </span>
+                </div>
+                <div className="flex gap-2">
+                  <Button size="sm" onClick={() => handleCompleteSigningWinner(m)} disabled={isProcessingM}>
+                    {isProcessingM ? "Processing..." : "Complete Signing"}
+                  </Button>
+                </div>
+              </div>
+            )}
+          )}
+        </CardContent>
+      </Card>
+      
       <Card className="w-full max-w-5xl shadow-lg">
         <CardHeader>
           <CardTitle>Markets</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          {markets.map((m) => (
-            <div
-              key={m.id}
-              className="p-3 bg-white rounded-lg shadow flex justify-between items-center"
-            >
-              <div>
-                <div className="font-medium">{m.title} <s />
-                  <span className={`${Number(m.options[0].percentage.slice(0, 2)) > 50 ? "text-blue-800" : "text-red-600"} font-bold`}>(Yes {m.options[0].type === "yes" ? m.options[0].percentage: "invalid market"})</span>
+          {markets.map((m) => {
+            const isYes = Number(m.options[0].percentage.slice(0, 2)) > 50;
+
+            return (
+              <div
+                key={m.id}
+                className="p-3 bg-white rounded-lg shadow flex justify-between items-center"
+              >
+                <div>
+                  <div className="font-medium">{m.title} <s />
+                    <span className={`${isYes ? "text-blue-800" : "text-red-600"} font-bold`}>(Yes {m.options[0].type === "yes" ? m.options[0].percentage: "invalid market"})</span>
+                  </div>
+                  {/* {true ? ( */}
+                  {m.resolved ? (
+                    <span className="text-sm text-green-700">
+                      Winner: {isYes ? "Yes" : "No"}
+                    </span>
+                  ) : (
+                    <span className="text-sm text-gray-500">Unresolved</span>
+                  )}
                 </div>
-                {/* {m.resolved ? ( */}
-                {true ? (
-                  <span className="text-sm text-green-700">
-                    Winner: {Number(m.options[0].percentage.slice(0, 2)) > 50 ? "Yes" : "No"}
-                  </span>
-                ) : (
-                  <span className="text-sm text-gray-500">Unresolved</span>
+                {/* {true && ( */}
+                {!m.resolved && (
+                  <div className="flex gap-2">
+                    <Button size="sm" onClick={() => handleUpdateWinner("Yes", m)}>
+                      Yes
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => handleUpdateWinner("No", m)}
+                    >
+                      No
+                    </Button>
+                  </div>
                 )}
               </div>
-              {/* {!m.resolved && ( */}
-              {true && (
-                <div className="flex gap-2">
-                  <Button size="sm" onClick={() => markWinner(m.id, "YES")}>
-                    Yes
-                  </Button>
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={() => markWinner(m.id, "NO")}
-                  >
-                    No
-                  </Button>
-                </div>
-              )}
-            </div>
-          ))}
+            )}
+          )}
         </CardContent>
       </Card>
     </motion.div>
