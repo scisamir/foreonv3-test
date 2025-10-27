@@ -38,12 +38,12 @@ export function CategoryFilter({ onFilterClick, showProposedMarket = true }: Cat
       <div className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4 flex-1 min-w-0">
-            <Button variant="outline" className="gap-2 bg-transparent whitespace-nowrap" onClick={onFilterClick}>
+            <Button variant="outline" className="gap-2 bg-transparent md:whitespace-nowrap" onClick={onFilterClick}>
               <Filter className="w-4 h-4" />
               Filter
             </Button>
 
-            <Button variant="outline" className="gap-2 bg-transparent whitespace-nowrap">
+            <Button variant="outline" className="gap-2 bg-transparent md:whitespace-nowrap">
               Sort By
               <ChevronDown className="w-4 h-4" />
             </Button>
@@ -62,7 +62,7 @@ export function CategoryFilter({ onFilterClick, showProposedMarket = true }: Cat
                   <Button
                     key={category}
                     variant="ghost"
-                    className={`whitespace-nowrap font-medium rounded-full px-4 py-2 flex-shrink-0 ${
+                    className={`md:whitespace-nowrap font-medium rounded-full px-4 py-2 flex-shrink-0 ${
                       activeCategory === category
                         ? "text-white hover:opacity-90"
                         : "text-muted-foreground hover:text-foreground"
@@ -89,7 +89,7 @@ export function CategoryFilter({ onFilterClick, showProposedMarket = true }: Cat
             <Link href={connected ? "/propose-market" : '/'} className="flex-shrink-0 ml-4">
               <Button
                 disabled={!connected}
-                className="text-white font-medium rounded-full px-6 py-2 hover:opacity-90 transition-opacity whitespace-nowrap"
+                className="text-white font-medium rounded-full px-6 py-2 hover:opacity-90 transition-opacity md:whitespace-nowrap"
                 style={{
                   background: "linear-gradient(135deg, #00A9B7 -1.33%, #4C32F2 47.36%, #9F00BE 95.53%)",
                 }}

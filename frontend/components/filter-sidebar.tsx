@@ -23,8 +23,8 @@ export function FilterSidebar({ isOpen, onClose }: FilterSidebarProps) {
       {/* Overlay for mobile */}
       <div className="absolute inset-0 bg-black/50 lg:hidden" onClick={onClose} />
 
-      {/* Sidebar */}
-      <div className="absolute left-0 top-0 h-full w-80 bg-background border-r border-border p-6 overflow-y-auto lg:relative lg:w-64">
+  {/* Sidebar */}
+  <div className="absolute left-0 top-0 h-full w-full max-w-xs bg-background border-r border-border p-6 overflow-y-auto lg:relative lg:w-64">
         <div className="flex items-center justify-between mb-6 lg:hidden">
           <h2 className="text-lg font-semibold">Filter</h2>
           <Button variant="ghost" size="sm" onClick={onClose}>

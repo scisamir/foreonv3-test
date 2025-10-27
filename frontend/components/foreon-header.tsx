@@ -44,7 +44,7 @@ export function ForeonHeader() {
 
         <div className="flex flex-col text-[#22005D]">
           {/* Main header row */}
-          <div className="container mx-auto flex items-center justify-between px-8 py-4">
+          <div className="container mx-auto flex items-center justify-between px-4 md:px-8 py-4">
             {/* Logo section */}
             <Link href="/" className="flex items-center gap-2">
               <Image src="/foreon-logo.svg" alt="Foreon Logo" width={24} height={24} className="md:w-8 md:h-8" />
@@ -182,10 +182,10 @@ export function ForeonHeader() {
             {/* Right section */}
             <div className="flex items-center gap-2 md:gap-3">
               {/* Desktop search - hidden on mobile */}
-              <div className="p-[-8px] relative items-center hidden lg:flex">
+              <div className="p-0 relative items-center hidden lg:flex">
                 <Input
                   placeholder="Search Market"
-                  className="pl-4 pr-12 w-50 bg-white/90 dark:bg-gray-800/90 border-gray-200 dark:border-gray-700 rounded-full text-gray-500 placeholder:text-gray-400"
+                  className="pl-4 pr-12 w-48 max-w-xs bg-white/90 dark:bg-gray-800/90 border-gray-200 dark:border-gray-700 rounded-full text-gray-500 placeholder:text-gray-400"
                 />
                 <Button
                   size="icon"

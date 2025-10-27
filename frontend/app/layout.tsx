@@ -8,7 +8,7 @@ import { ThemeProvider } from "@/components/theme-provider"
 import "./globals.css"
 import { ClientProviders } from "@/components/ClientProviders"
 import { WalletCheck } from "@/components/WalletCheck"
-import Footer from "@/components/Footer" // 👈 Import here
+import Footer from "@/components/Footer"
 
 const dmSans = DM_Sans({
   subsets: ["latin"],
@@ -24,6 +24,7 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <head>
         <title>Foreon - Prediction Markets</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta
           name="description"
           content="Trade on the future with Foreon prediction markets"
@@ -34,7 +35,7 @@ export default function RootLayout({
           <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
             <WalletCheck>
               {children}
-              <Footer /> {/* 👈 Add Footer below all page content */}
+              <Footer /> {/* Add Footer below all page content */}
             </WalletCheck>
           </ThemeProvider>
         </ClientProviders>
