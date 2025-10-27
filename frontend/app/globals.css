@@ -118,12 +118,40 @@
 }
 
 @layer base {
-  * {
-    @apply border-border outline-ring/50;
+  /* Ensure predictable sizing across elements */
+  *, *::before, *::after {
+    box-sizing: border-box;
+    border-color: var(--color-border);
+    outline-color: var(--color-ring);
   }
   body {
-    @apply bg-background text-foreground overflow-x-hidden;
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    overflow-x: hidden;
     /* Prevent mobile browsers from auto-scaling text */
     -webkit-text-size-adjust: 100%;
+  }
+
+  /* Make images and svgs responsive so they don't cause horizontal overflow */
+  img,
+  picture,
+  video,
+  svg {
+    max-width: 100%;
+    height: auto;
+    display: block;
+  }
+
+  /* Allow flex children to shrink on small screens (prevents overflowing flex items) */
+  .flex > * {
+    min-width: 0;
+  }
+
+  /* Safer text wrapping for long words / tokens */
+  .truncate,
+  .break-words,
+  .break-anywhere {
+    overflow-wrap: anywhere;
+    word-break: break-word;
   }
 }

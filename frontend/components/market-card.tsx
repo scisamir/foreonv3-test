@@ -44,7 +44,7 @@ export function MarketCard({ title, image, chance, options, volume, icon, id }: 
           <div className="flex flex-col items-center justify-between gap-4 px-4">
             <div className="flex items-center flex-start gap-4 mb-3 w-full">
               <img src={image || "/placeholder.svg"} alt={title} className="object-cover inline-block w-16 h-16 rounded-lg overflow-hidden flex-shrink-0" />
-              <h3 className="font-semibold text-sm text-foreground mb-3 line-clamp-2">{title}</h3>
+              <h3 className="font-semibold text-sm text-foreground mb-3 line-clamp-2 min-w-0">{title}</h3>
             </div>
 
             <div className="flex items-center justify-between mb-3 w-full">
