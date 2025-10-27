@@ -54,7 +54,10 @@ export interface SettingMarket {
   winner?: "YES" | "NO";
 }
 
-export interface CreateSettingsLSItem {
+export interface SettingsLSItem {
   globalSetting: GlobalSetting;
   signedTx1: string;
 }
+
+export type lsItemKeyType =
+  "Foreon_Create_Settings" | "Foreon_Update_Settings"

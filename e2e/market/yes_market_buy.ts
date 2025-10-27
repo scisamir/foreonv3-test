@@ -1,5 +1,5 @@
 import { deserializeDatum, mConStr0, mConStr1, mConStr2, mPubKeyAddress } from "@meshsdk/core";
-import { alwaysSuccessMintValidatorHash, blockchainProvider, depositScriptTxHash, depositScriptTxIdx, MarketCreatorNft, PrecisionFactor, txBuilder, UsdmAssetName, UsdmUnit, wallet1, wallet1Address, wallet1Collateral, wallet1SK, wallet1Utxos, wallet1VK, YesTokenName } from "../setup.js";
+import { alwaysSuccessMintValidatorHash, blockchainProvider, depositScriptTxHash, depositScriptTxIdx, MarketCreatorNft, MinMarketLovelace, PrecisionFactor, txBuilder, UsdmAssetName, UsdmUnit, wallet1, wallet1Address, wallet1Collateral, wallet1SK, wallet1Utxos, wallet1VK, YesTokenName } from "../setup.js";
 import { MarketAddr, MarketHash, MarketValidatorScript } from "./validator.js";
 import { DepositAddr, DepositHash } from "../deposit/validator.js";
 import { MarketDatumType } from "../types.js";
@@ -13,7 +13,8 @@ const marketToken =
     multiplier,
   ]);
 
-const marketUtxo = (await blockchainProvider.fetchAddressUTxOs(DepositAddr))[0];
+const marketUtxos = await blockchainProvider.fetchAddressUTxOs(DepositAddr);
+const marketUtxo = marketUtxos[marketUtxos.length - 1];
 
 const marketDatum = deserializeDatum<MarketDatumType>(marketUtxo.output.plutusData!);
 console.log("marketDatum:", marketDatum, '\n');
@@ -93,6 +94,7 @@ const unsignedTx = await txBuilder
     // .mintRedeemerValue(MarketExecution, "Mesh", { mem: rMem, steps: rSteps })
     // send back market utxo
     .txOut(DepositAddr, [
+      { unit: "lovelace", quantity: MinMarketLovelace },
       { unit: MarketHash + MarketCreatorNft, quantity: "1" },
       { unit: UsdmUnit, quantity: String(UpdatedMarketUsdmQuantity) }
     ])

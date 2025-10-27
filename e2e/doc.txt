@@ -1,4 +1,26 @@
+Smart contract improvements
+- There must be 3 ADA min in the market utxo all through
+- Buy and selling in markets must only be when `winner` is None
+- Redeeming in the market must only be when `winner` is Some(_)
+- Winner can only be updated once (Ask first)
+
+
+- Starting market of 3 ADA in all txs
+- GB settings utxo ref param -------
+- Deposit utxo ref --------
+- Check set fee for all
+
+
+Create global settings tx hash: a948a3b84e9a33e53a11e3fdaa0d1bdfb37b519ba4a0700f3e22e5a505e1af1c
+Create market tx hash: 8b80e486b8d2f9779d2ab8210c2e3b2fa0950c0ca66b95dfed6b4a0ebf0b8e62
+
+
+
+
+
+
 Create global settings tx hash: 880e079c6e39d17d5309d6a893c28729dd9dd197f9f24bc759be4c045c15a7bf
+Update global settings tx hash: 338efacb1b7f1c4557677c77abe192dc4e332d002deab13ccc4f6f38a79054fd
 Create market tx hash: 290d3bb7477216cd039291ed0634a3278902a6927418a59839cc078426b83d10
 
 

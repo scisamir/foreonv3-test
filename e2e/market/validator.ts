@@ -3,8 +3,8 @@ import { blueprint } from "../setup.js";
 import { GlobalSettingsHash } from "../global_settings/validator.js";
 import { DepositHash } from "../deposit/validator.js";
 
-const mParamTxHash = "880e079c6e39d17d5309d6a893c28729dd9dd197f9f24bc759be4c045c15a7bf";
-const mParamTxIdx = 2;
+const mParamTxHash = "e56b59c58903ba34ca5c4ff6e5222ad2990bfb136aa7cdcb90cf3eddf6ce154c";
+const mParamTxIdx = 1;
 
 const MarketValidator = blueprint.validators.filter(v => 
     v.title.includes("market.market_validator.mint")

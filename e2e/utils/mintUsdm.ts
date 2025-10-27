@@ -5,9 +5,12 @@ import { alwaysSuccessMintValidatorHash, alwaysSuccessValidatorMintScript, txBui
 const tokenName = "USDM";
 const tokenNameHex = stringToHex(tokenName);
 
+const tokenDecimals = 1_000_000
+const tokenQuantity = 500_000 * tokenDecimals;
+
 const unsignedTx = await txBuilder
     .mintPlutusScriptV3()
-    .mint("100000000000", alwaysSuccessMintValidatorHash, tokenNameHex)
+    .mint(String(tokenQuantity), alwaysSuccessMintValidatorHash, tokenNameHex)
     .mintingScript(alwaysSuccessValidatorMintScript)
     .mintRedeemerValue("")
     .txInCollateral(

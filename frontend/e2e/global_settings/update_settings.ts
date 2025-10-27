@@ -1,65 +1,87 @@
-import { mConStr0, mConStr1 } from "@meshsdk/core";
-import { alwaysSuccessMintValidatorHash, blockchainProvider, GlobalSettingsNft, multiSigAddress, multiSigCbor, multisigHash, multiSigUtxos, txBuilder, UsdmAssetName, wallet1, wallet1Address, wallet1Collateral, wallet1Utxos, wallet2 } from "../setup.js";
-import { GlobalSettingsAddr, GlobalSettingsHash, GlobalSettingsValidatorScript } from "./validator.js";
+import { IWallet, mConStr0, mConStr1, MeshTxBuilder, UTxO } from "@meshsdk/core";
+import { GlobalSettingsAddr, GlobalSettingsHash, GlobalSettingsValidatorScript } from "./validator";
+import { setup } from "../setup";
+import { BlockchainProviderType } from "../types";
+import { AllowedAsset, SettingsLSItem, GlobalSetting } from "@/lib/types";
 
-const AllowedAssets = [
-  mConStr0([
-    mConStr1([]),
-    alwaysSuccessMintValidatorHash,
-    UsdmAssetName,
-    1_000_000,
-  ]),
-];
+export const updateSettings = async (
+    txBuilder: MeshTxBuilder,
+    blockchainProvider: BlockchainProviderType,
+    wallet: IWallet,
+    walletAddress: string,
+    walletCollateral: UTxO,
+    walletUtxos: UTxO[],
+    minMarketAmount: number,
+    allowedAssets: AllowedAsset[],
+    globalSetting: GlobalSetting,
+) => {
+  const { GlobalSettingsNft, multiSigAddress, multiSigCbor, multisigHash } = setup();
+  const multiSigUtxos = await blockchainProvider.fetchAddressUTxOs(multiSigAddress);
 
-const GlobalSettingsDatum = mConStr0([
-  10_000,
-  AllowedAssets,
-  multisigHash,
-]);
+  let AllowedAssets = [];
 
-if (!multiSigCbor) {
-    throw new Error("multisig cbor doesn't exist");
+  for (let i = 0; i < allowedAssets.length; i++) {
+    const asset = allowedAssets[i];
+
+    let newAsset = mConStr0([
+      asset.isStable ? mConStr1([]) : mConStr0([]),
+      asset.policyId,
+      asset.assetNameHex,
+      asset.multiplier,
+    ])
+
+    AllowedAssets.push(newAsset);
+  }
+
+  const GlobalSettingsDatum = mConStr0([
+    minMarketAmount,
+    AllowedAssets,
+    multisigHash,
+  ]);
+
+  if (!multiSigCbor) {
+      throw new Error("multisig cbor doesn't exist");
+  }
+
+  const gsUtxo = (await blockchainProvider.fetchAddressUTxOs(GlobalSettingsAddr))[0];
+
+  const unsignedTx = await txBuilder
+      // signing utxo
+      .txIn(
+          multiSigUtxos[0].input.txHash,
+          multiSigUtxos[0].input.outputIndex,
+          multiSigUtxos[0].output.amount,
+          multiSigUtxos[0].output.address,
+      )
+      .txInScript(multiSigCbor)
+      // global settings utxo
+      .spendingPlutusScriptV3()
+      .txIn(
+          gsUtxo.input.txHash,
+          gsUtxo.input.outputIndex,
+          gsUtxo.output.amount,
+          gsUtxo.output.address,
+      )
+      .txInScript(GlobalSettingsValidatorScript)
+      .txInInlineDatumPresent()
+      .txInRedeemerValue(mConStr1([]))
+      // send global settings
+      .txOut(GlobalSettingsAddr, [{ unit: GlobalSettingsHash + GlobalSettingsNft, quantity: "1" }])
+      .txOutInlineDatumValue(GlobalSettingsDatum)
+      // send back multisig value to multisig
+      .txOut(multiSigAddress, multiSigUtxos[0].output.amount)
+      .txInCollateral(
+          walletCollateral.input.txHash,
+          walletCollateral.input.outputIndex,
+          walletCollateral.output.amount,
+          walletCollateral.output.address,
+      )
+      .changeAddress(walletAddress)
+      .selectUtxosFrom(walletUtxos)
+      .complete()
+
+  const signedTx1 = await wallet.signTx(unsignedTx, true);
+
+  const lsItem: SettingsLSItem = { globalSetting: globalSetting, signedTx1: signedTx1 }
+  localStorage.setItem("Foreon_Update_Settings", JSON.stringify(lsItem));
 }
-
-const gsUtxo = (await blockchainProvider.fetchAddressUTxOs(GlobalSettingsAddr))[0];
-
-const unsignedTx = await txBuilder
-    // signing utxo
-    .txIn(
-        multiSigUtxos[0].input.txHash,
-        multiSigUtxos[0].input.outputIndex,
-        multiSigUtxos[0].output.amount,
-        multiSigUtxos[0].output.address,
-    )
-    .txInScript(multiSigCbor)
-    // global settings utxo
-    .spendingPlutusScriptV3()
-    .txIn(
-        gsUtxo.input.txHash,
-        gsUtxo.input.outputIndex,
-        gsUtxo.output.amount,
-        gsUtxo.output.address,
-    )
-    .txInScript(GlobalSettingsValidatorScript)
-    .txInInlineDatumPresent()
-    .txInRedeemerValue(mConStr1([]))
-    // send global settings
-    .txOut(GlobalSettingsAddr, [{ unit: GlobalSettingsHash + GlobalSettingsNft, quantity: "1" }])
-    .txOutInlineDatumValue(GlobalSettingsDatum)
-    // send back multisig value to multisig
-    .txOut(multiSigAddress, multiSigUtxos[0].output.amount)
-    .txInCollateral(
-        wallet1Collateral.input.txHash,
-        wallet1Collateral.input.outputIndex,
-        wallet1Collateral.output.amount,
-        wallet1Collateral.output.address,
-    )
-    .changeAddress(wallet1Address)
-    .selectUtxosFrom(wallet1Utxos)
-    .complete()
-
-const signedTx1 = await wallet1.signTx(unsignedTx, true);
-const signedTx2 = await wallet2.signTx(signedTx1, true);
-
-const txHash = await wallet1.submitTx(signedTx2);
-console.log("Update global settings tx hash:", txHash);

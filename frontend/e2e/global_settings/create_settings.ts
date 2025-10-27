@@ -2,7 +2,7 @@ import { IWallet, mConStr0, mConStr1, MeshTxBuilder, UTxO } from "@meshsdk/core"
 import { GlobalSettingsAddr, GlobalSettingsHash, GlobalSettingsValidatorScript, gsParamTxHash, gsParamTxIdx } from "./validator";
 import { BlockchainProviderType } from "../types";
 import { setup } from "../setup";
-import { AllowedAsset, CreateSettingsLSItem, GlobalSetting } from "@/lib/types";
+import { AllowedAsset, SettingsLSItem, GlobalSetting } from "@/lib/types";
 
 export const createSettings = async (
     txBuilder: MeshTxBuilder,
@@ -19,7 +19,6 @@ export const createSettings = async (
   const multiSigUtxos = await blockchainProvider.fetchAddressUTxOs(multiSigAddress);
 
   let AllowedAssets = [];
-  // let AllowedAssets = [] as MConStr0<(string | number | MConStr1<any[]> | MConStr0<any[]>)[]>[];
 
   for (let i = 0; i < allowedAssets.length; i++) {
     const asset = allowedAssets[i];
@@ -80,6 +79,6 @@ export const createSettings = async (
 
   const signedTx1 = await wallet.signTx(unsignedTx, true);
 
-  const lsItem: CreateSettingsLSItem = { globalSetting: globalSetting, signedTx1: signedTx1 }
+  const lsItem: SettingsLSItem = { globalSetting: globalSetting, signedTx1: signedTx1 }
   localStorage.setItem("Foreon_Create_Settings", JSON.stringify(lsItem));
 }

@@ -4,6 +4,7 @@ import {
     MeshTxBuilder,
     MeshWallet,
     NativeScript,
+    SLOT_CONFIG_NETWORK,
     UTxO,
     applyParamsToScript,
     deserializeAddress,
@@ -11,6 +12,7 @@ import {
     resolveScriptHash,
     serializeNativeScript,
     stringToHex,
+    unixTimeToEnclosingSlot,
 } from "@meshsdk/core";
 import dotenv from "dotenv";
 dotenv.config();
@@ -107,13 +109,12 @@ const multiSigUtxos = await blockchainProvider.fetchAddressUTxOs(multiSigAddress
 const txBuilder = new MeshTxBuilder({
     fetcher: blockchainProvider,
     submitter: blockchainProvider,
-    // evaluator: evaluator, // Can also be "evaluator: blockchainProvider,"
     // evaluator: blockchainProvider,
     // evaluator: blockfrostProvider,
     verbose: false,
 });
 txBuilder.setNetwork('preprod');
-// txBuilder.txEvaluationMultiplier = 1.1
+// txBuilder.txEvaluationMultiplier = 1.6
 
 // test mint
 // Always success mint validator
@@ -134,10 +135,21 @@ const MarketCreatorNft = stringToHex("MCN");
 const PrecisionFactor = 10_000;
 const UsdmAssetName = stringToHex("USDM");
 const UsdmUnit = alwaysSuccessMintValidatorHash + UsdmAssetName;
+const MinMarketLovelace = "3000000";
 
 // Reference scripts
-const depositScriptTxHash = "ad409c4efdfe5c124a2f341305812bdc6536eb03ff78d4edc240c06786769ff1";
+const depositScriptTxHash = "e56b59c58903ba34ca5c4ff6e5222ad2990bfb136aa7cdcb90cf3eddf6ce154c";
 const depositScriptTxIdx = 0;
+
+const invalidBefore = unixTimeToEnclosingSlot(
+    (Date.now() - 50000),
+    SLOT_CONFIG_NETWORK.preprod
+)
+
+const invalidAfter = unixTimeToEnclosingSlot(
+    (Date.now() + 30 * 60 * 1000), // 30 mins
+    SLOT_CONFIG_NETWORK.preprod
+)
 
 export {
     blueprint,
@@ -161,6 +173,8 @@ export {
     multiSigUtxos,
     alwaysSuccessValidatorMintScript,
     alwaysSuccessMintValidatorHash,
+    invalidBefore,
+    invalidAfter,
     // Constants
     YesTokenName,
     NoTokenName,
@@ -169,6 +183,7 @@ export {
     PrecisionFactor,
     UsdmAssetName,
     UsdmUnit,
+    MinMarketLovelace,
     // Ref scripts
     depositScriptTxHash,
     depositScriptTxIdx,

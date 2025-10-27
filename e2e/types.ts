@@ -1,4 +1,4 @@
-import { BuiltinByteString, ConStr0, ConStr1, Integer, PubKeyAddress } from "@meshsdk/core";
+import { BuiltinByteString, ConStr0, ConStr1, Integer, List, PubKeyAddress, ScriptHash } from "@meshsdk/core";
 
 // Asset Type
 type AssetType = ConStr0<[
@@ -22,6 +22,7 @@ type StartingP = ConStr0<[
 
 type Winner = ConStr1 | ConStr0<[ConStr0 | ConStr1]>;
 
+// Market Datum
 type MarketDatumType = ConStr0<[
   PubKeyAddress,
   BuiltinByteString,
@@ -37,6 +38,14 @@ type MarketDatumType = ConStr0<[
   Winner,
 ]>;
 
+// Global Settings
+type GlobalSettingsType = ConStr0<[
+  Integer,
+  List<AssetType>,
+  ScriptHash
+]>;
+
 export {
   MarketDatumType,
+  GlobalSettingsType,
 }

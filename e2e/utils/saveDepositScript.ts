@@ -8,15 +8,15 @@ const refAddress = serializePlutusScript(
     { code: refScript, version: "V3" }
 ).address;
 
-const theUtxo = (await blockchainProvider.fetchUTxOs("abc2437d60829d0b775d169c6bb0f049e3d7894136efb4ccb09e52e70c987c5d", 10))[0];
+// const theUtxo = (await blockchainProvider.fetchUTxOs("abc2437d60829d0b775d169c6bb0f049e3d7894136efb4ccb09e52e70c987c5d", 10))[0];
 
 const unsignedTx = await txBuilder
-    .txIn(
-        theUtxo.input.txHash,
-        theUtxo.input.outputIndex,
-        theUtxo.output.amount,
-        theUtxo.output.address,
-    )
+    // .txIn(
+    //     theUtxo.input.txHash,
+    //     theUtxo.input.outputIndex,
+    //     theUtxo.output.amount,
+    //     theUtxo.output.address,
+    // )
     .txOut(refAddress, [])
     .txOutReferenceScript(DepositValidatorScript, "V3")
     .changeAddress(wallet1Address)

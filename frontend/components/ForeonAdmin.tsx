@@ -7,31 +7,33 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { motion } from "framer-motion";
 import { useWalletCustom } from "./WalletConnectionContext";
-import { AllowedAsset, CreateSettingsLSItem, GlobalSetting, SettingMarket } from "@/lib/types";
+import { AllowedAsset, SettingsLSItem, GlobalSetting, SettingMarket, lsItemKeyType, Market } from "@/lib/types";
 import { fetchGlobalSettings } from "@/e2e/utils";
 import { toast, ToastContainer } from "react-toastify";
 import { createSettings } from "@/e2e/global_settings/create_settings";
-import { completeSigningCreate } from "@/e2e/global_settings/complete_signing";
+import { updateSettings } from "@/e2e/global_settings/update_settings";
+import { completeSigning } from "@/e2e/global_settings/complete_signing";
+import { fetchMarketData } from "@/lib/markets";
 
 export default function ForeonAdmin() {
-  const { blockchainProvider, txBuilder, walletCollateral, wallet, address, walletUtxos } = useWalletCustom();
+  const { blockchainProvider, txBuilder, walletCollateral, wallet, address, walletUtxos, connected } = useWalletCustom();
 
   const [globalSettings, setGlobalSettings] = useState<GlobalSetting[]>([
-    {
-      id: 1,
-      minimumMarketAmount: 5000,
-      adminMultisig: "ae12bfab908fef23acbd123f000000fabc00123abcdeffedcba0011",
-      allowedAssets: [
-        {
-          isStable: true,
-          policyId: "abcd1234efgh5678ijkl9012mnop3456qrst7890uvwx1122aabb3344",
-          assetNameHex: "555344", // 'USD'
-          multiplier: 1,
-        },
-      ],
-    },
+    // {
+    //   id: 1,
+    //   minimumMarketAmount: 5000,
+    //   adminMultisig: "ae12bfab908fef23acbd123f000000fabc00123abcdeffedcba0011",
+    //   allowedAssets: [
+    //     {
+    //       isStable: true,
+    //       policyId: "abcd1234efgh5678ijkl9012mnop3456qrst7890uvwx1122aabb3344",
+    //       assetNameHex: "555344", // 'USD'
+    //       multiplier: 1,
+    //     },
+    //   ],
+    // },
   ]);
-  
+
   const [hGlobalSettings, setHGlobalSettings] = useState<GlobalSetting[]>([]);
 
   const [isProcessing, setIsProcessing] = useState<boolean>(false)
@@ -43,9 +45,9 @@ export default function ForeonAdmin() {
     allowedAssets: [],
   });
 
-  const [markets, setMarkets] = useState<SettingMarket[]>([
-    { id: 1, name: "Market 1", resolved: false },
-    { id: 2, name: "Market 2", resolved: false },
+  const [markets, setMarkets] = useState<Market[]>([
+    // { id: 1, name: "Market 1", resolved: false },
+    // { id: 2, name: "Market 2", resolved: false },
   ]);
 
   const setNewSetting = async () => {
@@ -58,11 +60,30 @@ export default function ForeonAdmin() {
     setNewSetting();
 
     // Get half signed transaction from global settings and display it
-    const lsItemString = localStorage.getItem("Foreon_Create_Settings");
-    if (!lsItemString) return
-    const lsItem: CreateSettingsLSItem = JSON.parse(lsItemString);
+    const lsItemStringCreate = localStorage.getItem("Foreon_Create_Settings");
+    const lsItemStringUpdate = localStorage.getItem("Foreon_Update_Settings");
+
+    if (!lsItemStringCreate && !lsItemStringUpdate) return
+
+    const lsItem: SettingsLSItem = JSON.parse(lsItemStringCreate ? lsItemStringCreate : lsItemStringUpdate ? lsItemStringUpdate : "");
+
     setHGlobalSettings([lsItem.globalSetting]);
-  }, [])
+  }, [isProcessing])
+
+  useEffect(() => {
+      const fetchMarket = async () => {
+        try {
+          if (!blockchainProvider) throw new Error('blockchainProvider not found');
+          const marketResult = await fetchMarketData(blockchainProvider)
+          const marketData = marketResult.filter((m) => m.title !== "Unknown")
+          setMarkets(marketData)
+        } catch(e) {
+          console.error('e:', e);
+        }
+      }
+  
+      fetchMarket();
+    }, [connected])
 
   // Toast
   const toastSuccess = (txHash: string) => {
@@ -115,18 +136,60 @@ export default function ForeonAdmin() {
     setIsProcessing(false);
     toastSuccess("Success! Now complete the signing with the other wallet");
   }
-
-  // handle complete signing create settings
-  const handleCompleteSigningCreate = async () => {
+  
+  // handle update settings
+  const handleUpdateSettings = async () => {
     setIsProcessing(true);
     if (!txBuilder || !walletCollateral || !blockchainProvider) {
       toastFailure("Error: Check collateral")
       return;
     }
 
+    try {
+      await updateSettings(
+        txBuilder,
+        blockchainProvider,
+        wallet,
+        address,
+        walletCollateral,
+        walletUtxos,
+        form.minimumMarketAmount,
+        form.allowedAssets,
+        form,
+      );
+      txBuilder.reset();
+    } catch (e) {
+      txBuilder.reset();
+      setIsProcessing(false);
+      toastFailure(e);
+      console.error("e tx:", e);
+      console.log("Err in handle update settings");
+      return;
+    }
+
+    txBuilder.reset();
+    setIsProcessing(false);
+    toastSuccess("Success! Now complete the signing with the other wallet");
+  }
+
+  // handle complete signing settings
+  const handleCompleteSigning = async () => {
+    setIsProcessing(true);
+    if (!txBuilder || !walletCollateral || !blockchainProvider) {
+      toastFailure("Error: Check collateral")
+      return;
+    }
+
+    let islsItemCreate = false;
+    const lsItemStringCreate = localStorage.getItem("Foreon_Create_Settings");
+    // const lsItemStringUpdate = localStorage.getItem("Foreon_Update_Settings");
+    if (lsItemStringCreate) {
+      islsItemCreate = true;
+    }
+
     let txHash = "";
     try {
-      txHash = await completeSigningCreate(wallet);
+      txHash = await completeSigning(wallet, islsItemCreate ? "Foreon_Create_Settings" : "Foreon_Update_Settings");
       txBuilder.reset();
     } catch (e) {
       txBuilder.reset();
@@ -185,13 +248,12 @@ export default function ForeonAdmin() {
       setGlobalSettings(
         globalSettings.map((s) => (s.id === form.id ? { ...form } : s))
       );
-      alert("Global settings updated (mock)");
+      await handleUpdateSettings();
     } else {
       // Create new
       const newSetting = { ...form, id: Date.now() };
       setGlobalSettings([...globalSettings, newSetting]);
       await handleCreateSettings();
-      // alert("Global settings created (mock)");
     }
     resetForm();
   };
@@ -208,7 +270,7 @@ export default function ForeonAdmin() {
     }
   };
 
-  const markWinner = (marketId: number, winner: "YES" | "NO") => {
+  const markWinner = (marketId: string, winner: "YES" | "NO") => {
     if (confirm(`Set winner of Market ${marketId} to ${winner}?`)) {
       setMarkets(
         markets.map((m) =>
@@ -283,6 +345,7 @@ export default function ForeonAdmin() {
                         variant="destructive"
                         size="sm"
                         onClick={() => handleDelete(s.id)}
+                        disabled
                       >
                         Delete
                       </Button>
@@ -344,7 +407,7 @@ export default function ForeonAdmin() {
                     </td>
 
                     <td className="p-2 flex flex-col gap-2">
-                      <Button size="sm" onClick={handleCompleteSigningCreate} disabled={isProcessing}>
+                      <Button size="sm" onClick={handleCompleteSigning} disabled={isProcessing}>
                         {isProcessing ? "Processing..." : "Complete Sigining"}
                       </Button>
                     </td>
@@ -376,6 +439,7 @@ export default function ForeonAdmin() {
                   setForm({ ...form, minimumMarketAmount: Number(e.target.value) })
                 }
                 required
+                disabled={globalSettings.length !== 0}
               />
             </div>
 
@@ -391,7 +455,7 @@ export default function ForeonAdmin() {
             <div className="space-y-2">
               <div className="flex justify-between items-center">
                 <label className="text-sm font-medium">Allowed Assets</label>
-                <Button variant="outline" size="sm" onClick={addAsset}>
+                <Button variant="outline" size="sm" onClick={addAsset} disabled={globalSettings.length !== 0}>
                   + Add Asset
                 </Button>
               </div>
@@ -428,7 +492,7 @@ export default function ForeonAdmin() {
                   <Input
                     placeholder="Multiplier"
                     type="number"
-                    value={asset.multiplier}
+                    value={asset.multiplier === 0 ? "" : asset.multiplier}
                     onChange={(e) =>
                       updateAsset(index, "multiplier", Number(e.target.value))
                     }
@@ -444,7 +508,7 @@ export default function ForeonAdmin() {
               ))}
             </div>
 
-            <Button onClick={handleSave} disabled={isProcessing || !form.minimumMarketAmount || !form.allowedAssets[0]?.assetNameHex || !form.allowedAssets[0]?.policyId || !form.allowedAssets[0]?.multiplier}>
+            <Button onClick={handleSave} disabled={isProcessing || !form.minimumMarketAmount || !form.allowedAssets[0]?.assetNameHex || !form.allowedAssets[0]?.policyId || !form.allowedAssets[0]?.multiplier || globalSettings.length !== 0}>
               {isProcessing ? "Processing..." :
                 form.id ? "Update Global Setting" : "Create Global Setting"
               }
@@ -464,16 +528,20 @@ export default function ForeonAdmin() {
               className="p-3 bg-white rounded-lg shadow flex justify-between items-center"
             >
               <div>
-                <div className="font-medium">{m.name}</div>
-                {m.resolved ? (
+                <div className="font-medium">{m.title} <s />
+                  <span className={`${Number(m.options[0].percentage.slice(0, 2)) > 50 ? "text-blue-800" : "text-red-600"} font-bold`}>(Yes {m.options[0].type === "yes" ? m.options[0].percentage: "invalid market"})</span>
+                </div>
+                {/* {m.resolved ? ( */}
+                {true ? (
                   <span className="text-sm text-green-700">
-                    Winner: {m.winner}
+                    Winner: {Number(m.options[0].percentage.slice(0, 2)) > 50 ? "Yes" : "No"}
                   </span>
                 ) : (
                   <span className="text-sm text-gray-500">Unresolved</span>
                 )}
               </div>
-              {!m.resolved && (
+              {/* {!m.resolved && ( */}
+              {true && (
                 <div className="flex gap-2">
                   <Button size="sm" onClick={() => markWinner(m.id, "YES")}>
                     Yes
