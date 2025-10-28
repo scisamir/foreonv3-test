@@ -35,15 +35,15 @@ export function CategoryFilter({ onFilterClick, showProposedMarket = true }: Cat
 
   return (
     <div className="border-b border-border bg-background">
-      <div className="container mx-auto px-4 py-4">
+      <div className="container mx-auto sm:px-4 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4 flex-1 min-w-0">
-            <Button variant="outline" className="gap-2 bg-transparent md:whitespace-nowrap" onClick={onFilterClick}>
+            <Button variant="outline" className="gap-0 sm:gap-2 bg-transparent md:whitespace-nowrap" onClick={onFilterClick}>
               <Filter className="w-4 h-4" />
               Filter
             </Button>
 
-            <Button variant="outline" className="gap-2 bg-transparent md:whitespace-nowrap">
+            <Button variant="outline" className="gap-0 sm:gap-2 bg-transparent md:whitespace-nowrap">
               Sort By
               <ChevronDown className="w-4 h-4" />
             </Button>
